@@ -164,8 +164,7 @@ body.editing input[type=date]{display:inline-block}
   <h2>Сколько мы уже ждём</h2>
   <p class="sub" data-e="counters-sub">Каждый день этого счётчика — день, после которого мы ближе к новой встрече.</p>
   <div class="counters">
-    <div class="counter"><div class="num" id="apart">–</div><div class="lbl">дней мы в разных городах</div>
-      <input type="date" id="apartDate" aria-label="Дата переезда"></div>
+    <div class="counter"><div class="num" id="apart">–</div><div class="lbl">дней мы в разных городах</div></div>
     <div class="counter"><div class="num" id="meet">∞</div><div class="lbl" id="meetLbl">дней до нашей встречи</div>
       <input type="date" id="meetDate" aria-label="Дата встречи"></div>
     <div class="counter"><div class="num" id="together">–</div><div class="lbl">дней мы вместе</div>
@@ -186,7 +185,7 @@ body.editing input[type=date]{display:inline-block}
 
 <section class="reveal">
   <h2>Наши моменты</h2>
-  <p class="sub">Чтобы вспомнить, с чего всё началось. (Нажми «Редактировать» внизу и впиши свои даты и истории.)</p>
+  <p class="sub">Чтобы вспомнить, с чего всё началось.</p>
   <div class="timeline">
     <div class="tl"><div class="date" data-e="t1d">День, когда мы познакомились</div><h3 data-e="t1h">Первая встреча</h3><p data-e="t1p">Я тогда ещё не знал, что встретил человека, с которым хочется быть всегда.</p></div>
     <div class="tl"><div class="date" data-e="t2d">Наше первое свидание</div><h3 data-e="t2h">Время остановилось</h3><p data-e="t2p">Помню, как мы говорили обо всём и не могли наговориться.</p></div>
@@ -205,7 +204,6 @@ body.editing input[type=date]{display:inline-block}
     <div class="dots" id="dots"></div>
     <div class="count" id="count"></div>
   </div>
-  <button class="btn small addphoto" id="addSlot">+ добавить фото</button>
   </section>
 
 <section class="reveal">
@@ -244,9 +242,7 @@ body.editing input[type=date]{display:inline-block}
   <div class="hand" style="font-size:1.8rem" data-e="foot">Алматы ♥ Астана — скоро в одном городе</div>
 </footer>
 
-<button class="fab" id="editBtn">✎ Редактировать</button>
 <div class="lightbox" id="lb"><img alt=""><p></p></div>
-<input type="file" id="file" accept="image/*" multiple hidden>
 
 <script>
 (function(){
@@ -287,37 +283,23 @@ body.editing input[type=date]{display:inline-block}
     const v=store.get('t:'+el.dataset.e,null);if(v!==null)el.innerHTML=v;
     el.addEventListener('input',()=>store.set('t:'+el.dataset.e,el.innerHTML));
   });
-  const editBtn=$('#editBtn');
-  editBtn.onclick=()=>{
-    const on=document.body.classList.toggle('editing');
-    $$('[data-e]').forEach(el=>el.contentEditable=on?'true':'false');
-    editBtn.textContent=on?'✓ Готово':'✎ Редактировать';
-    $$('.env').forEach(e=>on&&e.classList.add('open'));
-  };
-
+  
   /* counters */
   const day=86400000;
   function daysBetween(a,b){return Math.round((b-a)/day)}
   const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
   const parse=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
-  const defApart=(()=>{const d=today();d.setMonth(d.getMonth()-2);return d.toISOString().slice(0,10)})();
-  const apartDate=$('#apartDate'),meetDate=$('#meetDate'),togDate=$('#togetherDate');
-  apartDate.value=store.get('apart',defApart);
-  meetDate.value=store.get('meet','');
-  togDate.value=store.get('tog','2023-09-23');
+  const apartVal='2026-09-13',meetVal='',togVal='2023-09-23';
   function upd(){
     const t0=today();
-    $('#apart').textContent=apartDate.value?Math.max(0,daysBetween(parse(apartDate.value),t0)):'–';
-    if(meetDate.value){
-      const n=daysBetween(t0,parse(meetDate.value));
+    $('#apart').textContent=Math.max(0,daysBetween(parse(apartVal),t0));
+    if(meetVal){
+      const n=daysBetween(t0,parse(meetVal));
       $('#meet').textContent=n>0?n:'0';
       $('#meetLbl').textContent=n>0?'дней до нашей встречи':(n===0?'сегодня мы увидимся! ♥':'мы уже встретились ♥');
-    }else{$('#meet').textContent='∞';$('#meetLbl').textContent='дней до встречи (задай дату в «Редактировать»)'}
-    $('#together').textContent=togDate.value?Math.max(0,daysBetween(parse(togDate.value),t0)):'–';
+    }else{$('#meet').textContent='скоро';$('#meetLbl').textContent='до нашей встречи ♥'}
+    $('#together').textContent=Math.max(0,daysBetween(parse(togVal),t0));
   }
-  apartDate.onchange=()=>{store.set('apart',apartDate.value);upd()};
-  meetDate.onchange=()=>{store.set('meet',meetDate.value);upd()};
-  togDate.onchange=()=>{store.set('tog',togDate.value);upd()};
   upd();
 
   /* open-when envelopes */
@@ -398,29 +380,6 @@ body.editing input[type=date]{display:inline-block}
   new MutationObserver(()=>$$('.slide blockquote').forEach(q=>q.contentEditable=editing()?'true':'false'))
     .observe(document.body,{attributes:true,attributeFilter:['class']});
 
-  function shrink(file){
-    return new Promise((res,rej)=>{
-      const r=new FileReader();r.onerror=rej;
-      r.onload=()=>{
-        const img=new Image();img.onerror=rej;
-        img.onload=()=>{
-          const k=Math.min(1,1000/Math.max(img.width,img.height));
-          const c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;
-          c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-          res(c.toDataURL('image/jpeg',.8));
-        };
-        img.src=r.result;
-      };
-      r.readAsDataURL(file);
-    });
-  }
-  $('#addSlot').onclick=()=>fileInp.click();
-  fileInp.onchange=async()=>{
-    const files=[...fileInp.files];fileInp.value='';
-    for(const f of files){try{extra.push(await shrink(f))}catch(e){}}
-    if(!store.set('extra',extra))alert('Не хватило места в браузере для новых фото.');
-    render();go(track.children.length-1);
-  };
   render();
 
   
